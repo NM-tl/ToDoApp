@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>TodoListapp</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<section class="main">
+    <div class="main-wrapper">
+        <div class="user-data">
+            <div class="menu-circle"></div>
+            <div class="user-avatar"></div>
+            <div class="user-name">User</div>
+            <div class="user-time" id="current-time"></div>
+            <div class="user-tasks">
+                <div class="all">
+                    <div class="tasks-all_icon"></div>
+                    <div class="user-tasks_all"></div>
+                </div>
+                <div class="done">
+                    <div class="tasks-done_icon"></div>
+                    <div class="user-tasks_done"></div>
+                </div>
+            </div>
+        </div>
+        <div class="list-data">
+            <form>
+                <input type="text" placeholder="Add new task...">
+                <button type="submit">&plus;</button>
+            </form>
+            <div class="list-data__tasks"><ul></ul></div>
+        </div>
+    </div>
+</section>
+<script src="scripts/main.js"></script>
+</body>
+</html>
