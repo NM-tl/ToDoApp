@@ -1,91 +1,127 @@
-window.onload = loadTasks;
+let tasks = []
 
-document.querySelector("form").addEventListener("submit", e => {
-    e.preventDefault();
-    addTask();
-});
+document.addEventListener('DOMContentLoaded', () => {
+    const todoForm = document.querySelector('form')
 
-// String.prototype.firstLetterCaps = function() {
-//     return this.charAt(0).toUpperCase() + this.slice(1);
-// }
-//
-// const userName = prompt('Enter your name:')
-// document.querySelector('.user-name').innerHTML = userName.firstLetterCaps();
+    const localStorageTasks = localStorage.getItem("tasks")
 
-let tasks = Array.from(JSON.parse(localStorage.getItem("tasks")));
+    if (localStorageTasks) {
+        tasks = Array.from(JSON.parse(localStorageTasks)) || [];
 
-function loadTasks() {
-    if (localStorage.getItem("tasks") == null) return;
+    }
 
-    tasks.forEach(task => {
-        const list = document.querySelector("ul");
-        const li = document.createElement("li");
-        li.innerHTML = `<input type="checkbox" onclick="taskComplete(this)" class="check" ${task.completed ? 'checked' : ''}>
-          <input type="text" value="${task.task}" class="task ${task.completed ? 'completed' : ''}" onfocus="getCurrentTask(this)" onblur="editTask(this)">
-          <div class="del-icon" onclick="removeTask(this)"></div>`;
-        list.insertBefore(li, list.children[0]);
+    todoForm.addEventListener("submit", e => {
+        e.preventDefault();
+
+        tasks = addTask(tasks || [])
     });
+
+    initialViewTaskList(tasks)
+
+    setCompletedTasksCounter();
+
+    setTasksCounter(tasks?.length);
+
+    showCurrentTime();
+
+})
+
+function initialViewTaskList(tasks) {
+    if (Array.isArray(tasks) && tasks?.length > 0) {
+        tasks.forEach(task => createTask(task));
+    }
 }
 
-function allTasksCounter() {
-    let allTasksCount = tasks.length;
-
-    document.querySelector('.user-tasks_all').innerHTML = `All tasks: ${allTasksCount}`;
-    return allTasksCount;
+const setLocalStorageTaskList = (tasks) => {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
-allTasksCounter();
+function setTasksCounter(listTaskCount) {
+    if (typeof listTaskCount === 'number' && listTaskCount >= 0) {
+        const userTaskList = document.querySelector('.user-tasks_all')
 
-function completedTasksCounter() {
-    let initialVal = 0;
+        if (userTaskList) {
+            userTaskList.innerHTML = `All tasks: ${listTaskCount}`;
 
-    let completedTasksCount = tasks.reduce(function (acc, curr) {
-        return acc + curr.completed;
-    }, initialVal);
+            return listTaskCount;
+        }
 
-    document.querySelector('.user-tasks_done').innerHTML = `Done: ${completedTasksCount}`;
-    return completedTasksCount;
+    }
 }
 
-completedTasksCounter();
+function setCompletedTasksCounter() {
+    const completedTasksCount = tasks.reduce((acc, curr) => {
+        return acc + (curr?.completed || 0);
+    }, 0);
 
-function addTask() {
-    const task = document.querySelector("form input");
+    const userCompletedTaskList = document.querySelector('.user-tasks_done')
+
+    if (userCompletedTaskList) {
+        userCompletedTaskList.innerHTML = `Done: ${completedTasksCount}`;
+
+        return completedTasksCount;
+    }
+}
+
+function createTask(task) {
+
     const list = document.querySelector("ul");
+
+    const li = document.createElement("li");
+
+    li.addEventListener('click', (event) => completeTask(event))
+
+    li.innerHTML = `<input type="checkbox" class="check" ${task?.completed ? 'checked' :''}>
+      <input type="text" value="${task?.task || task?.value || ''}" class="task ${task?.completed ? 'completed' :''}" onfocus="getCurrentTask(this)" onblur="editTask(this)">
+      <div class="del-icon" onclick="removeTask(this)"></div>`;
+
+    if (list) {
+        list.insertBefore(li, list?.children[0]);
+    }
+}
+
+function addTask(tasks) {
+    const task = document.querySelector("form input");
 
     if (task.value === "") {
         alert("Please add some task!");
-        return false;
+        return;
     }
 
     if (document.querySelector(`input[value="${task.value}"]`)) {
         alert("Task already exist!");
-        return false;
+        return;
     }
 
-    localStorage.setItem("tasks", JSON.stringify([...JSON.parse(localStorage.getItem("tasks") || "[]"), { task: task.value, completed: false }]));
+    const addedTasks = [...(tasks || []), {
+        task: task.value,
+        completed: false
+    }]
 
-    const li = document.createElement("li");
-    li.innerHTML = `<input type="checkbox" onclick="taskComplete(this)" class="check">
-      <input type="text" value="${task.value}" class="task" onfocus="getCurrentTask(this)" onblur="editTask(this)">
-      <div class="del-icon" onclick="removeTask(this)"></div>`;
-    list.insertBefore(li, list.children[0]);
+    createTask(task)
+
+    setLocalStorageTaskList(addedTasks)
+
     task.value = "";
 
-    document.querySelector('.user-tasks_all').innerHTML = `All tasks: ${allTasksCounter()}`;
+    setTasksCounter((tasks?.length || 0) + 1)
+
+    return addedTasks;
 }
 
-function taskComplete(event) {
+function completeTask(event) {
+
     tasks.forEach(task => {
-        if (task.task === event.nextElementSibling.value) {
+        if (task.task === event?.target?.nextElementSibling?.value) {
             task.completed = !task.completed;
             task.task.strike();
         }
     });
+    setLocalStorageTaskList(tasks)
 
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-    event.nextElementSibling.classList.toggle("completed");
-    document.querySelector('.user-tasks_done').innerHTML = `Done: ${completedTasksCounter()}`;
+    event?.target?.nextElementSibling?.classList?.toggle("completed");
+
+    setCompletedTasksCounter()
 }
 
 function removeTask(event) {
@@ -94,10 +130,13 @@ function removeTask(event) {
             tasks.splice(tasks.indexOf(task), 1);
         }
     });
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+
+    setLocalStorageTaskList(tasks)
+
     event.parentElement.remove();
 
-    document.querySelector('.user-tasks_all').innerHTML = `All tasks: ${allTasksCounter()}`;
+    setTasksCounter(tasks?.length)
+
 }
 
 let currentTask = null;
@@ -127,23 +166,20 @@ function editTask(event) {
         }
     });
 
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+    setLocalStorageTaskList(tasks)
 }
 
-const currTime = () => {
+const showCurrentTime = () => {
     const now = new Date();
-    const h = padWithZeroes(now.getHours(), 2);
-    const m = padWithZeroes(now.getMinutes(), 2);
-    const s = padWithZeroes(now.getSeconds(), 2);
+    const hour = padWithZeroes(now.getHours(), 2);
+    const minute = padWithZeroes(now.getMinutes(), 2);
+    const seconds = padWithZeroes(now.getSeconds(), 2);
 
-    document.querySelector('.user-time').innerHTML = `${h}:${m}:${s}`;
-    setTimeout(currTime, 500);
+    document.querySelector('.user-time').innerHTML = `${hour}:${minute}:${seconds}`;
+
+    setTimeout(showCurrentTime, 500);
 };
 
 const padWithZeroes = (input, length) => {
-    let padded = input;
-    if (typeof input !== "string") padded = input.toString();
-    return padded.padStart(length, "0");
+    return String(input).padStart(length, "0");
 };
-
-currTime();
